@@ -132,7 +132,9 @@ fun LoginScreen(
                     focusedBorderColor = PrimaryBlue,
                     unfocusedBorderColor = Color(0xFFE5E7EB),
                     focusedContainerColor = White,
-                    unfocusedContainerColor = White
+                    unfocusedContainerColor = White,
+                    focusedTextColor = TextDark,
+                    unfocusedTextColor = TextDark
                 )
             )
 
@@ -162,7 +164,9 @@ fun LoginScreen(
                     focusedBorderColor = PrimaryBlue,
                     unfocusedBorderColor = Color(0xFFE5E7EB),
                     focusedContainerColor = White,
-                    unfocusedContainerColor = White
+                    unfocusedContainerColor = White,
+                    focusedTextColor = TextDark,
+                    unfocusedTextColor = TextDark
                 )
             )
 

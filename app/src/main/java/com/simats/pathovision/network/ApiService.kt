@@ -2,6 +2,8 @@ package com.simats.pathovision.network
 
 import com.simats.pathovision.models.CaseItem
 import com.simats.pathovision.models.CreateCaseRequest
+import com.simats.pathovision.models.GenerateReportResponse
+import com.simats.pathovision.models.SignOffResponse
 import com.simats.pathovision.models.ChangePasswordRequest
 import com.simats.pathovision.models.ChangePasswordResponse
 import com.simats.pathovision.models.LoginRequest
@@ -13,6 +15,7 @@ import com.simats.pathovision.models.ProfileResponse
 import com.simats.pathovision.models.RegisterRequest
 import com.simats.pathovision.models.RegisterResponse
 import com.simats.pathovision.models.UserData
+import com.simats.pathovision.models.MlPredictionResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response
@@ -65,4 +68,14 @@ interface ApiService {
 
     @GET("auth/patients")
     suspend fun getPatients(): Response<List<UserData>>
+
+    @Multipart
+    @POST("ml/predict")
+    suspend fun predictImage(@Part image: MultipartBody.Part): Response<MlPredictionResponse>
+
+    @POST("cases/{caseId}/generate-report")
+    suspend fun generateReport(@Path("caseId") caseId: String): Response<GenerateReportResponse>
+
+    @POST("cases/{caseId}/sign-off")
+    suspend fun signOffReport(@Path("caseId") caseId: String): Response<SignOffResponse>
 }

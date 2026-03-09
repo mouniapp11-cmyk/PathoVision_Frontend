@@ -37,6 +37,7 @@ class ProfileViewModel @Inject constructor(
         phoneNumber: String? = null,
         hospitalAffiliation: String? = null,
         licenseId: String? = null,
+        dateOfBirth: String? = null,
         profileImage: okhttp3.MultipartBody.Part? = null
     ) {
         viewModelScope.launch {
@@ -46,6 +47,7 @@ class ProfileViewModel @Inject constructor(
                 phoneNumber = phoneNumber,
                 hospitalAffiliation = hospitalAffiliation,
                 licenseId = licenseId,
+                dateOfBirth = dateOfBirth,
                 profileImage = profileImage
             )
         }

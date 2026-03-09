@@ -1,6 +1,7 @@
 package com.simats.pathovision.ui.cases
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -15,8 +16,11 @@ import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.CloudUpload
 import androidx.compose.material.icons.rounded.HelpOutline
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
@@ -38,42 +42,53 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
+import android.net.Uri
 import com.simats.pathovision.models.UserData
 import com.simats.pathovision.utils.Resource
+import com.simats.pathovision.utils.FileUtils
+import kotlinx.coroutines.launch
 
 private val PrimaryBlue = Color(0xFF2F5FE3)
 private val BackgroundGray = Color(0xFFF4F6F9)
 private val TextDark = Color(0xFF1A1F2E)
 private val TextGray = Color(0xFF8C97B2)
 private val CardWhite = Color.White
+private val SuccessGreen = Color(0xFF10B981)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewCaseScreen(
     onNavigateBack: () -> Unit = {},
-    onStartAnalysis: (caseId: String, caseTitle: String) -> Unit = { _, _ -> },
+    onStartAnalysis: (caseId: String, caseTitle: String, imagePath: String?) -> Unit = { _, _, _ -> },
     onUploadClick: () -> Unit = {},
     viewModel: NewCaseViewModel = hiltViewModel()
 ) {
     val patientsState by viewModel.patientsState.collectAsState()
     val createCaseState by viewModel.createCaseState.collectAsState()
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     
     var selectedPatient by remember { mutableStateOf<UserData?>(null) }
     var selectedTissueType by remember { mutableStateOf("") }
     val clinicalNotes = remember { mutableStateOf("") }
     val selectedFileName = remember { mutableStateOf<String?>(null) }
+    val selectedImageUri = remember { mutableStateOf<Uri?>(null) }
     var showError by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     
@@ -85,7 +100,11 @@ fun NewCaseScreen(
         when (createCaseState) {
             is Resource.Success -> {
                 val createdCase = (createCaseState as Resource.Success).data
-                onStartAnalysis(createdCase.id, createdCase.title)
+                // Convert URI to file path if image was selected
+                val imagePath = selectedImageUri.value?.let { uri ->
+                    FileUtils.uriToFile(context, uri)?.absolutePath
+                }
+                onStartAnalysis(createdCase.id, createdCase.title, imagePath)
                 viewModel.resetCreateCaseState()
             }
             is Resource.Error -> {
@@ -113,7 +132,10 @@ fun NewCaseScreen(
     val uploadLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri ->
-        selectedFileName.value = uri?.lastPathSegment
+        uri?.let {
+            selectedFileName.value = it.lastPathSegment
+            selectedImageUri.value = it
+        }
     }
 
     Column(
@@ -175,7 +197,7 @@ fun NewCaseScreen(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(180.dp)
+                    .height(if (selectedImageUri.value != null) 300.dp else 180.dp)
                     .clip(RoundedCornerShape(16.dp))
                     .background(Color.Transparent)
                     .clickable {
@@ -191,37 +213,71 @@ fun NewCaseScreen(
                         .dashedBorder(color = Color(0xFFB7C6F8)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFE9F0FF)),
-                            contentAlignment = Alignment.Center
+                    if (selectedImageUri.value != null) {
+                        // Show image preview
+                        Column(
+                            modifier = Modifier.fillMaxSize().padding(12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Icon(
-                                Icons.Rounded.CloudUpload,
-                                contentDescription = "Upload",
-                                tint = PrimaryBlue
-                            )
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFFF4F6F9)),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                            ) {
+                                AsyncImage(
+                                    model = selectedImageUri.value,
+                                    contentDescription = "Selected Image",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Image,
+                                    contentDescription = null,
+                                    tint = SuccessGreen,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = selectedFileName.value ?: "Image selected",
+                                    fontSize = 12.sp,
+                                    color = SuccessGreen,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
                         }
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = "Tap to browse files",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = TextDark
-                        )
-                        if (selectedFileName.value.isNullOrBlank()) {
+                    } else {
+                        // Show upload prompt
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFFE9F0FF)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Rounded.CloudUpload,
+                                    contentDescription = "Upload",
+                                    tint = PrimaryBlue
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = "Tap to browse files",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = TextDark
+                            )
                             Text(
                                 text = "or drag and drop here",
-                                fontSize = 12.sp,
-                                color = TextGray,
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
-                        } else {
-                            Text(
-                                text = "Selected: ${selectedFileName.value}",
                                 fontSize = 12.sp,
                                 color = TextGray,
                                 modifier = Modifier.padding(top = 4.dp)

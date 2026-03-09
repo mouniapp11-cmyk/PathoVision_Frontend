@@ -1,6 +1,8 @@
 package com.simats.pathovision.repository
 
 import com.simats.pathovision.models.CaseItem
+import com.simats.pathovision.models.GenerateReportResponse
+import com.simats.pathovision.models.SignOffResponse
 import com.simats.pathovision.network.ApiService
 import com.simats.pathovision.utils.Resource
 import javax.inject.Inject
@@ -39,6 +41,34 @@ class CaseRepository @Inject constructor(
             } else {
                 val errorBody = response.errorBody()?.string()
                 Resource.Error(errorBody ?: "Failed to create case.")
+            }
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "Unable to connect to server.")
+        }
+    }
+
+    suspend fun generateReport(caseId: String): Resource<GenerateReportResponse> {
+        return try {
+            val response = apiService.generateReport(caseId)
+            if (response.isSuccessful && response.body() != null) {
+                Resource.Success(response.body()!!)
+            } else {
+                val errorBody = response.errorBody()?.string()
+                Resource.Error(errorBody ?: "Failed to generate report.")
+            }
+        } catch (e: Exception) {
+            Resource.Error(e.message ?: "Unable to connect to server.")
+        }
+    }
+
+    suspend fun signOffReport(caseId: String): Resource<SignOffResponse> {
+        return try {
+            val response = apiService.signOffReport(caseId)
+            if (response.isSuccessful && response.body() != null) {
+                Resource.Success(response.body()!!)
+            } else {
+                val errorBody = response.errorBody()?.string()
+                Resource.Error(errorBody ?: "Failed to sign off report.")
             }
         } catch (e: Exception) {
             Resource.Error(e.message ?: "Unable to connect to server.")

@@ -22,11 +22,14 @@ import com.simats.pathovision.ui.cases.CasesScreen
 import com.simats.pathovision.ui.analysis.AnalysisScreen
 import com.simats.pathovision.ui.analysis.AnalysisListScreen
 import com.simats.pathovision.ui.analysis.CaseAnalysisScreen
+import com.simats.pathovision.ui.report.DigitalReportScreen
 import com.simats.pathovision.ui.cases.NewCaseScreen
 import com.simats.pathovision.ui.dashboard.BackgroundGray
 import com.simats.pathovision.ui.dashboard.DashboardBottomBar
 import com.simats.pathovision.ui.dashboard.DashboardContent
 import com.simats.pathovision.ui.dashboard.PatientDashboard
+import com.simats.pathovision.ui.dashboard.StudentDashboard
+import com.simats.pathovision.ui.dashboard.StudentCaseDetailScreen
 import com.simats.pathovision.ui.profile.EditProfileScreen
 import com.simats.pathovision.ui.profile.ProfileScreen
 import com.simats.pathovision.ui.profile.ProfileViewModel
@@ -34,6 +37,7 @@ import com.simats.pathovision.ui.settings.SettingsScreen
 import com.simats.pathovision.ui.chat.MessagesScreen
 import com.simats.pathovision.ui.chat.ChatDetailScreen
 import com.simats.pathovision.ui.chat.ChatWithDoctorScreen
+import com.simats.pathovision.models.CaseItem
 import androidx.compose.material3.Surface
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.simats.pathovision.utils.Resource
@@ -53,9 +57,14 @@ fun MainScreen(onLogout: () -> Unit = {}) {
     var isAnalyzingCase by remember { mutableStateOf(false) }
     var analyzingCaseId by remember { mutableStateOf("") }
     var analyzingCaseTitle by remember { mutableStateOf("") }
+    var analyzingImagePath by remember { mutableStateOf<String?>(null) }
+    var isViewingDigitalReport by remember { mutableStateOf(false) }
+    var digitalReportCaseId by remember { mutableStateOf("") }
     var selectedChatCaseId by remember { mutableStateOf("") }
     var selectedChatReceiverId by remember { mutableStateOf("") }
     var selectedChatReceiverName by remember { mutableStateOf("") }
+    var isViewingStudentCaseDetail by remember { mutableStateOf(false) }
+    var selectedStudentCase by remember { mutableStateOf<CaseItem?>(null) }
 
     val profileViewModel: ProfileViewModel = hiltViewModel()
     val profileState by profileViewModel.profileState.collectAsState()
@@ -149,12 +158,40 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                         caseId = analyzingCaseId,
                         caseTitle = analyzingCaseTitle,
                         slideImageUrl = null,
-                        isAnalyzing = true,
-                        analysisComplete = false,
+                        imageFilePath = analyzingImagePath,
                         onNavigateBack = {
                             isAnalyzingCase = false
                             analyzingCaseId = ""
                             analyzingCaseTitle = ""
+                            analyzingImagePath = null
+                        },
+                        onValidateFindings = {
+                            isViewingDigitalReport = true
+                            digitalReportCaseId = analyzingCaseId
+                            isAnalyzingCase = false
+                        }
+                    )
+                }
+                isViewingDigitalReport -> {
+                    DigitalReportScreen(
+                        caseId = digitalReportCaseId,
+                        onNavigateBack = {
+                            isViewingDigitalReport = false
+                            digitalReportCaseId = ""
+                        },
+                        onSignOffReport = {
+                            // TODO: Implement sign-off logic
+                            isViewingDigitalReport = false
+                            digitalReportCaseId = ""
+                        }
+                    )
+                }
+                isViewingStudentCaseDetail && selectedStudentCase != null -> {
+                    StudentCaseDetailScreen(
+                        caseItem = selectedStudentCase!!,
+                        onNavigateBack = {
+                            isViewingStudentCaseDetail = false
+                            selectedStudentCase = null
                         }
                     )
                 }
@@ -201,10 +238,11 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                 isCreatingCase -> {
                     NewCaseScreen(
                         onNavigateBack = { isCreatingCase = false },
-                        onStartAnalysis = { caseId, caseTitle ->
+                        onStartAnalysis = { caseId, caseTitle, imagePath ->
                             // Navigate to analysis screen with created case
                             analyzingCaseId = caseId
                             analyzingCaseTitle = caseTitle
+                            analyzingImagePath = imagePath
                             isCreatingCase = false
                             isAnalyzingCase = true
                         },
@@ -227,12 +265,23 @@ fun MainScreen(onLogout: () -> Unit = {}) {
                                 onNavigateToCases = { selectedTab = 1 }
                             )
                         }
-                        "PATIENT", "STUDENT" -> {
+                        "PATIENT" -> {
                             PatientDashboard(
                                 userName = dashboardName,
                                 profilePicture = profilePicture,
                                 onNavigateToProfile = { isViewingProfile = true },
                                 onChatWithDoctor = { isViewingDoctorChat = true }
+                            )
+                        }
+                        "STUDENT" -> {
+                            StudentDashboard(
+                                userName = dashboardName,
+                                profilePicture = profilePicture,
+                                onNavigateToProfile = { isViewingProfile = true },
+                                onCaseClick = { caseItem ->
+                                    selectedStudentCase = caseItem
+                                    isViewingStudentCaseDetail = true
+                                }
                             )
                         }
                         else -> {

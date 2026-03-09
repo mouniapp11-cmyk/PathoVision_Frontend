@@ -52,6 +52,8 @@ data class ProfileResponse(
     val hospital_affiliation: String? = null,
     @SerializedName("license_id")
     val license_id: String? = null,
+    @SerializedName("date_of_birth")
+    val date_of_birth: String? = null,
     @SerializedName("profile_picture")
     val profile_picture: String? = null
 )

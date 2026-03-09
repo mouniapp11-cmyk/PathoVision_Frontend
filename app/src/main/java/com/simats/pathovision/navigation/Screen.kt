@@ -11,4 +11,5 @@ sealed class Screen(val route: String) {
     object Cases : Screen("cases")
     object PatientDashboard : Screen("patient_dashboard")
     object StudentDashboard : Screen("student_dashboard")
+    object DigitalReport : Screen("digital_report")     // Pathologist report validation
 }

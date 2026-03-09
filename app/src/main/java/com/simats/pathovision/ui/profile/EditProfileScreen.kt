@@ -49,10 +49,12 @@ fun EditProfileScreen(
 
     var isLoading by remember { mutableStateOf(false) }
     var hasAttemptedSave by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
     var fullName by remember { mutableStateOf("") }
     var licenseId by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
     var institution by remember { mutableStateOf("") }
+    var dateOfBirth by remember { mutableStateOf("") }
     var selectedImageUri by remember { mutableStateOf<android.net.Uri?>(null) }
 
     val context = LocalContext.current
@@ -77,6 +79,7 @@ fun EditProfileScreen(
                 licenseId = profile.license_id ?: ""
                 phoneNumber = profile.phone_number ?: ""
                 institution = profile.hospital_affiliation ?: ""
+                dateOfBirth = profile.date_of_birth?.substringBefore("T") ?: ""
             }
             else -> {}
         }
@@ -93,6 +96,7 @@ fun EditProfileScreen(
                 if (hasAttemptedSave) {
                     isLoading = false
                     hasAttemptedSave = false
+                    errorMessage = null
                     viewModel.loadProfile()
                     viewModel.resetUpdateState()
                     onProfileUpdated()
@@ -103,8 +107,8 @@ fun EditProfileScreen(
                 if (hasAttemptedSave) {
                     isLoading = false
                     hasAttemptedSave = false
+                    errorMessage = state.message
                 }
-                // Show error toast
             }
             null -> {}
         }
@@ -115,6 +119,48 @@ fun EditProfileScreen(
             .fillMaxSize()
             .background(BackgroundGray)
     ) {
+        if (errorMessage != null) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFFFFEBEE)),
+                color = Color(0xFFFFEBEE)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Rounded.Info,
+                        contentDescription = "Error",
+                        tint = Color(0xFFD32F2F),
+                        modifier = Modifier
+                            .size(24.dp)
+                            .padding(end = 8.dp)
+                    )
+                    Text(
+                        text = errorMessage ?: "Unknown error",
+                        fontSize = 13.sp,
+                        color = Color(0xFFD32F2F),
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(
+                        onClick = { errorMessage = null },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            Icons.Rounded.Close,
+                            contentDescription = "Dismiss",
+                            tint = Color(0xFFD32F2F),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+        }
+
         // Header
         Row(
             modifier = Modifier
@@ -163,6 +209,7 @@ fun EditProfileScreen(
                         phoneNumber = phoneNumber,
                         hospitalAffiliation = institution,
                         licenseId = licenseId,
+                        dateOfBirth = dateOfBirth.trim().substringBefore("T").takeIf { it.isNotBlank() },
                         profileImage = imagePart
                     )
                 },
@@ -290,6 +337,16 @@ fun EditProfileScreen(
                     label = "Phone Number",
                     value = phoneNumber,
                     onValueChange = { phoneNumber = it },
+                    enabled = !isLoading
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Date of Birth Field
+                EditTextField(
+                    label = "Date of Birth (YYYY-MM-DD)",
+                    value = dateOfBirth,
+                    onValueChange = { dateOfBirth = it },
                     enabled = !isLoading
                 )
 

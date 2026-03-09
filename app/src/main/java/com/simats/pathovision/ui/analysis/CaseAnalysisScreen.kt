@@ -26,6 +26,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.simats.pathovision.models.AnalysisFinding
+import java.io.File
 
 private val PrimaryBlue = Color(0xFF2F5FE3)
 private val SuccessGreen = Color(0xFF10B981)
@@ -42,25 +43,27 @@ fun CaseAnalysisScreen(
     caseId: String,
     caseTitle: String,
     slideImageUrl: String?,
-    isAnalyzing: Boolean = false,
-    analysisComplete: Boolean = false,
+    imageFilePath: String? = null,
     onNavigateBack: () -> Unit = {},
     onViewFullImage: () -> Unit = {},
+    onValidateFindings: () -> Unit = {},
     viewModel: CaseAnalysisViewModel = hiltViewModel()
 ) {
     val isAnalyzingState by viewModel.isAnalyzing.collectAsStateWithLifecycle()
     val analysisCompleteState by viewModel.analysisComplete.collectAsStateWithLifecycle()
     val findings by viewModel.findings.collectAsStateWithLifecycle()
 
-    // Start analysis when screen loads if not already complete
-    LaunchedEffect(caseId) {
-        if (!analysisCompleteState && !isAnalyzingState) {
-            viewModel.startAnalysis(caseId)
+    // Start analysis when screen loads or when image changes
+    LaunchedEffect(caseId, imageFilePath) {
+        if (!isAnalyzingState) {
+            // Reset analysis state for new image
+            val imageFile = imageFilePath?.let { File(it) }
+            viewModel.startAnalysis(caseId, imageFile)
         }
     }
 
-    val currentIsAnalyzing = isAnalyzing || isAnalyzingState
-    val currentAnalysisComplete = analysisComplete || analysisCompleteState
+    val currentIsAnalyzing = isAnalyzingState
+    val currentAnalysisComplete = analysisCompleteState
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -243,7 +246,11 @@ fun CaseAnalysisScreen(
             if (currentIsAnalyzing) {
                 AnalyzingProgress()
             } else if (currentAnalysisComplete && findings.isNotEmpty()) {
-                AnalysisFindings(findings = findings, anomaliesCount = findings.size)
+                AnalysisFindings(
+                    findings = findings,
+                    anomaliesCount = findings.size,
+                    onValidateFindings = onValidateFindings
+                )
             } else if (currentAnalysisComplete && findings.isEmpty()) {
                 NoFindingsCard()
             }
@@ -341,7 +348,11 @@ fun AnalyzingProgress() {
 }
 
 @Composable
-fun AnalysisFindings(findings: List<AnalysisFinding>, anomaliesCount: Int) {
+fun AnalysisFindings(
+    findings: List<AnalysisFinding>,
+    anomaliesCount: Int,
+    onValidateFindings: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -394,6 +405,32 @@ fun AnalysisFindings(findings: List<AnalysisFinding>, anomaliesCount: Int) {
                         color = Color(0xFFE5E7EB)
                     )
                 }
+            }
+
+            // Validate AI Findings Button
+            Spacer(modifier = Modifier.height(20.dp))
+            
+            Button(
+                onClick = { onValidateFindings() },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = PrimaryBlue
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(
+                    Icons.Rounded.CheckCircle,
+                    contentDescription = "Validate",
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Validate AI Findings",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
         }
     }
@@ -448,7 +485,7 @@ fun FindingItem(finding: AnalysisFinding) {
         // Match Percentage
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                text = "${finding.matchPercentage}% Match",
+                text = String.format("%.1f%% Match", finding.matchPercentage),
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
                 color = when {

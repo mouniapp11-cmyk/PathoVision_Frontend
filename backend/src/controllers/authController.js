@@ -114,7 +114,7 @@ const getProfile = async (req, res) => {
     try {
         const userId = req.user.id;
         const user = await User.findByPk(userId, {
-            attributes: ['id', 'name', 'email', 'role', 'phone_number', 'hospital_affiliation', 'license_id', 'profile_picture']
+            attributes: ['id', 'name', 'email', 'role', 'phone_number', 'hospital_affiliation', 'license_id', 'date_of_birth', 'profile_picture']
         });
 
         if (!user) {
@@ -131,7 +131,12 @@ const getProfile = async (req, res) => {
 const updateProfile = async (req, res) => {
     try {
         const userId = req.user.id;
-        const { name, phone_number, hospital_affiliation, license_id } = req.body;
+        const { name, phone_number, hospital_affiliation, license_id, date_of_birth } = req.body;
+
+        console.log('UpdateProfile called for user:', userId);
+        console.log('Request body:', req.body);
+        console.log('Request file:', req.file);
+        console.log('Received fields:', { name, phone_number, hospital_affiliation, license_id, date_of_birth });
 
         const user = await User.findByPk(userId);
         if (!user) {
@@ -142,11 +147,25 @@ const updateProfile = async (req, res) => {
         if (phone_number) user.phone_number = phone_number;
         if (hospital_affiliation) user.hospital_affiliation = hospital_affiliation;
         if (license_id) user.license_id = license_id;
+        if (date_of_birth) {
+            console.log('Setting date_of_birth to:', date_of_birth);
+            user.date_of_birth = date_of_birth;
+        }
         if (req.file) {
             user.profile_picture = req.file.path.replace(/\\/g, '/');
         }
 
+        console.log('Saving user with fields:', {
+            name: user.name,
+            phone_number: user.phone_number,
+            hospital_affiliation: user.hospital_affiliation,
+            license_id: user.license_id,
+            date_of_birth: user.date_of_birth,
+            profile_picture: user.profile_picture
+        });
+
         await user.save();
+        console.log('User saved successfully');
 
         res.json({
             message: 'Profile updated successfully',
@@ -158,6 +177,7 @@ const updateProfile = async (req, res) => {
                 phone_number: user.phone_number,
                 hospital_affiliation: user.hospital_affiliation,
                 license_id: user.license_id,
+                date_of_birth: user.date_of_birth,
                 profile_picture: user.profile_picture
             }
         });

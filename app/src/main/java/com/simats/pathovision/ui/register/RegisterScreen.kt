@@ -300,6 +300,8 @@ fun FormTextField(
             unfocusedBorderColor = Color(0xFFE5E7EB),
             focusedContainerColor = White,
             unfocusedContainerColor = White,
+            focusedTextColor = TextDark,
+            unfocusedTextColor = TextDark
         )
     )
 }
@@ -338,6 +340,8 @@ fun PasswordTextField(
             unfocusedBorderColor = Color(0xFFE5E7EB),
             focusedContainerColor = White,
             unfocusedContainerColor = White,
+            focusedTextColor = TextDark,
+            unfocusedTextColor = TextDark
         )
     )
 }

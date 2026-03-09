@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const authRoutes = require('./routes/authRoutes');
 const caseRoutes = require('./routes/caseRoutes');
 const chatRoutes = require('./routes/chatRoutes');
+const mlInferenceRouter = require('./routes/mlInference');
 const sequelize = require('./config/database');
 const path = require('path');
 // IMPORTANT: Import models/index to register all Sequelize associations (hasMany, belongsTo)
@@ -28,6 +29,7 @@ app.use((req, res, next) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/cases', caseRoutes);
 app.use('/api/messages', chatRoutes);
+app.use('/api/ml', mlInferenceRouter);
 
 // Serve uploaded images
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -51,8 +53,8 @@ const startServer = async () => {
         await sequelize.authenticate();
         console.log('Database connected successfully.');
         await sequelize.sync({ alter: true }); // Create/update tables automatically
-        app.listen(PORT, () => {
-            console.log(`Server running on port ${PORT}`);
+        app.listen(PORT, '0.0.0.0', () => {
+            console.log(`Server running on port ${PORT} and accessible from network`);
         });
     } catch (error) {
         console.error('Unable to connect to the database:', error);

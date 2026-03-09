@@ -13,3 +13,25 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Environment and secrets
+.env
+.env.*
+backend/.env
+
+# Dependency directories
+**/node_modules/
+venv_django/
+
+# Python cache and local DB
+__pycache__/
+*.pyc
+db_django.sqlite3
+
+# Build and temp outputs
+**/build/
+.kotlin/
+build_output*.txt
+
+# Large ML artifacts
+ml/*.pt

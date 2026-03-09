@@ -180,6 +180,13 @@ fun ProfileContent(
 
 @Composable
 fun AccountInfoCard(profile: ProfileResponse) {
+    fun formatDob(rawDob: String?): String {
+        if (rawDob.isNullOrBlank()) {
+            return "Not provided"
+        }
+        return rawDob.substringBefore("T")
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -198,6 +205,14 @@ fun AccountInfoCard(profile: ProfileResponse) {
 
             // Full Name
             InfoField(label = "FULL NAME", value = profile.name)
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Date of Birth
+            InfoField(
+                label = "DATE OF BIRTH",
+                value = formatDob(profile.date_of_birth)
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
