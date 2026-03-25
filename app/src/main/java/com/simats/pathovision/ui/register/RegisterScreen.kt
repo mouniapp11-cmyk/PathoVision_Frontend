@@ -199,8 +199,10 @@ fun RegisterScreen(
                 onClick = {
                     when {
                         fullName.isBlank() -> Toast.makeText(context, "Please enter your name", Toast.LENGTH_SHORT).show()
+                        fullName.any { it.isDigit() } -> Toast.makeText(context, "Username shouldn't have numbers in them", Toast.LENGTH_SHORT).show()
                         email.isBlank() -> Toast.makeText(context, "Please enter your email", Toast.LENGTH_SHORT).show()
                         password.length < 6 -> Toast.makeText(context, "Password must be at least 6 characters", Toast.LENGTH_SHORT).show()
+                        !(password.any { it.isLetter() } && password.any { it.isDigit() } && password.any { !it.isLetterOrDigit() }) -> Toast.makeText(context, "Password must have special characters, numbers, and characters", Toast.LENGTH_SHORT).show()
                         password != confirmPassword -> Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
                     else -> viewModel.register(fullName.trim(), email.trim(), password, selectedRole.uppercase())
                     }

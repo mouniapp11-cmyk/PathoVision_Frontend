@@ -195,23 +195,30 @@ fun EditProfileScreen(
             }
             IconButton(
                 onClick = {
-                    hasAttemptedSave = true
-                    val imagePart = selectedImageUri?.let { uri ->
-                        val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                            ?: return@let null
-                        val mediaType = (context.contentResolver.getType(uri) ?: "image/*").toMediaType()
-                        val requestBody = bytes.toRequestBody(mediaType)
-                        val fileName = "profile_${System.currentTimeMillis()}.jpg"
-                        MultipartBody.Part.createFormData("profile_picture", fileName, requestBody)
+                    when {
+                        fullName.isBlank() -> errorMessage = "Full Name cannot be empty"
+                        fullName.any { it.isDigit() } -> errorMessage = "Usernames shouldn't have numbers in them"
+                        phoneNumber.isNotBlank() && (phoneNumber.length != 10 || !phoneNumber.all { it.isDigit() }) -> errorMessage = "Phone number must be exactly 10 digits"
+                        else -> {
+                            hasAttemptedSave = true
+                            val imagePart = selectedImageUri?.let { uri ->
+                                val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                                    ?: return@let null
+                                val mediaType = (context.contentResolver.getType(uri) ?: "image/*").toMediaType()
+                                val requestBody = bytes.toRequestBody(mediaType)
+                                val fileName = "profile_${System.currentTimeMillis()}.jpg"
+                                MultipartBody.Part.createFormData("profile_picture", fileName, requestBody)
+                            }
+                            viewModel.updateProfile(
+                                name = fullName.takeIf { it.isNotBlank() },
+                                phoneNumber = phoneNumber,
+                                hospitalAffiliation = institution,
+                                licenseId = licenseId,
+                                dateOfBirth = dateOfBirth.trim().substringBefore("T").takeIf { it.isNotBlank() },
+                                profileImage = imagePart
+                            )
+                        }
                     }
-                    viewModel.updateProfile(
-                        name = fullName.takeIf { it.isNotBlank() },
-                        phoneNumber = phoneNumber,
-                        hospitalAffiliation = institution,
-                        licenseId = licenseId,
-                        dateOfBirth = dateOfBirth.trim().substringBefore("T").takeIf { it.isNotBlank() },
-                        profileImage = imagePart
-                    )
                 },
                 enabled = !isLoading
             ) {
